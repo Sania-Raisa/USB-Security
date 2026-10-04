@@ -1,2 +1,20 @@
 [2026-10-04 23:26:03] USB device connected.
 [2026-10-04 23:26:03] USB device disconnected.
+[2026-10-05 00:02:01] USB device list changed.
+[2026-10-05 00:02:02] USB device list changed.
+[2026-10-05 00:02:02] USB device list changed.
+[2026-10-05 00:02:07] USB device list changed.
+[2026-10-05 00:02:09] USB device list changed.
+[2026-10-05 00:02:09] USB device list changed.
+[2026-10-05 00:03:58] USB device list changed.
+[2026-10-05 00:03:59] USB device list changed.
+[2026-10-05 00:03:59] USB device list changed.
+[2026-10-05 00:03:59] USB device disconnected: USB\VID_1EA7&PID_0066&MI_01\6&B1991A6&0&0001
+[2026-10-05 00:03:59] USB device disconnected: USB\VID_1EA7&PID_0066&MI_00\6&B1991A6&0&0000
+[2026-10-05 00:03:59] USB device disconnected: USB\VID_1EA7&PID_0066\5&AD60CA2&0&2
+[2026-10-05 00:04:39] USB device connected: USB\VID_1EA7&PID_0066&MI_01\6&B1991A6&0&0001
+[2026-10-05 00:04:39] USB device connected: USB\VID_1EA7&PID_0066&MI_00\6&B1991A6&0&0000
+[2026-10-05 00:04:39] USB device connected: USB\VID_1EA7&PID_0066\5&AD60CA2&0&2
+[2026-10-05 00:04:39] USB device list changed.
+[2026-10-05 00:04:39] USB device list changed.
+[2026-10-05 00:04:41] USB device list changed.
