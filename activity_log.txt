@@ -1,0 +1,2 @@
+[2026-10-04 23:26:03] USB device connected.
+[2026-10-04 23:26:03] USB device disconnected.
