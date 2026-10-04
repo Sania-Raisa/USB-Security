@@ -1,12 +1,14 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.HashSet;
+import java.util.Set;
 
 public class USBDeviceMonitor {
 
-    // Get currently connected USB devices
-    public static String getUSBDevices() {
+    // Currently connected USB devices-এর PNP ID সংগ্রহ করে
+    public static Set<String> getUSBDevices() {
 
-        StringBuilder usbDevices = new StringBuilder();
+        Set<String> devices = new HashSet<>();
 
         try {
 
@@ -14,13 +16,15 @@ public class USBDeviceMonitor {
                     "powershell.exe -Command " +
                     "\"Get-CimInstance Win32_PnPEntity | " +
                     "Where-Object {$_.PNPDeviceID -like 'USB*'} | " +
-                    "Select-Object Name,PNPDeviceID\"";
+                    "ForEach-Object {$_.PNPDeviceID}\"";
 
             Process process = Runtime.getRuntime().exec(command);
 
             BufferedReader reader =
                     new BufferedReader(
-                            new InputStreamReader(process.getInputStream())
+                            new InputStreamReader(
+                                    process.getInputStream()
+                            )
                     );
 
             String line;
@@ -29,28 +33,29 @@ public class USBDeviceMonitor {
 
                 line = line.trim();
 
-                if (!line.isEmpty()
-                        && !line.startsWith("Name")
-                        && !line.startsWith("----")) {
-
-                    usbDevices.append(line).append("\n");
+                if (!line.isEmpty()) {
+                    devices.add(line);
                 }
             }
+
+            reader.close();
 
             process.waitFor();
 
         } catch (Exception e) {
 
-            System.out.println("Error detecting USB devices.");
+            System.out.println(
+                    "Error detecting USB devices."
+            );
         }
 
-        return usbDevices.toString().trim();
+        return devices;
     }
 
-    // Continuously monitor USB devices
+    // USB device continuously monitor করবে
     public static void monitorUSB() {
 
-        String previousUSB = getUSBDevices();
+        Set<String> previousDevices = getUSBDevices();
 
         System.out.println("USB Device Monitor");
         System.out.println("========================");
@@ -63,46 +68,71 @@ public class USBDeviceMonitor {
 
                 Thread.sleep(2000);
 
-                String currentUSB = getUSBDevices();
+                Set<String> currentDevices = getUSBDevices();
 
-                // USB device connected
-                if (!currentUSB.equals(previousUSB)) {
+                // নতুন USB device connected
+                for (String device : currentDevices) {
 
-                    if (previousUSB.isEmpty() && !currentUSB.isEmpty()) {
+                    if (!previousDevices.contains(device)) {
 
-                        System.out.println("USB Device Connected!");
-                        System.out.println(currentUSB);
+                        System.out.println(
+                                "USB Device Connected!"
+                        );
+
+                        System.out.println(
+                                "Device ID: " + device
+                        );
+
+                        ActivityLogger.logActivity(
+                                "USB device connected: " + device
+                        );
+
+                        System.out.println(
+                                "------------------------"
+                        );
                     }
-
-                    // USB device removed
-                    else if (!previousUSB.isEmpty() && currentUSB.isEmpty()) {
-
-                        System.out.println("USB Device Disconnected!");
-                    }
-
-                    // USB device list changed
-                    else {
-
-                        System.out.println("USB Device List Changed!");
-                        System.out.println(currentUSB);
-                    }
-
-                    System.out.println("------------------------");
-
-                    previousUSB = currentUSB;
                 }
+
+                // USB device disconnected
+                for (String device : previousDevices) {
+
+                    if (!currentDevices.contains(device)) {
+
+                        System.out.println(
+                                "USB Device Disconnected!"
+                        );
+
+                        System.out.println(
+                                "Device ID: " + device
+                        );
+
+                        ActivityLogger.logActivity(
+                                "USB device disconnected: " + device
+                        );
+
+                        System.out.println(
+                                "------------------------"
+                        );
+                    }
+                }
+
+                // Current list save করে রাখবে
+                previousDevices = currentDevices;
 
             } catch (InterruptedException e) {
 
-                System.out.println("Monitoring stopped.");
+                System.out.println(
+                        "Monitoring stopped."
+                );
+
                 break;
             }
         }
     }
-}
 
+    // Program run করার জন্য main method
     public static void main(String[] args) {
-    System.out.println("Detected USB Devices:");
-    System.out.println("========================");
-    System.out.println(getUSBDevices());
+
+        monitorUSB();
+    }
 }
