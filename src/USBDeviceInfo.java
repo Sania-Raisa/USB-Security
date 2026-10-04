@@ -1,6 +1,3 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 public class USBDeviceInfo {
 
     // USB device-এর information রাখার variables
@@ -13,6 +10,26 @@ public class USBDeviceInfo {
 
         this.name = name;
         this.deviceID = deviceID;
+        this.status = status;
+    }
+
+    // Device name পাওয়ার method
+    public String getName() {
+        return name;
+    }
+
+    // Device ID পাওয়ার method
+    public String getDeviceID() {
+        return deviceID;
+    }
+
+    // Device status পাওয়ার method
+    public String getStatus() {
+        return status;
+    }
+
+    // Device information update করার method
+    public void setStatus(String status) {
         this.status = status;
     }
 
@@ -30,55 +47,29 @@ public class USBDeviceInfo {
         System.out.println("================================");
     }
 
+    // Object-কে readable text হিসেবে দেখানোর method
+    @Override
+    public String toString() {
+
+        return "Name: " + name
+                + " | Device ID: " + deviceID
+                + " | Status: " + status;
+    }
+
+    // Testing-এর জন্য main method
+    
     public static void main(String[] args) {
 
-        try {
+        // Test device information
+        USBDeviceInfo device =
+                new USBDeviceInfo(
+                        "USB Input Device",
+                        "USB\\VID_1EA7&PID_0066",
+                        "Connected"
+                );
 
-            // Windows PowerShell command
-            // এটি computer-এর USB devices খুঁজবে
-            String command =
-                    "powershell.exe -Command " +
-                    "\"Get-CimInstance Win32_PnPEntity | " +
-                    "Where-Object {$_.PNPDeviceID -like 'USB*'} | " +
-                    "Select-Object Name,PNPDeviceID,Status\"";
+        device.displayInfo();
 
-            // PowerShell command চালানো
-            Process process = Runtime.getRuntime().exec(command);
-
-            // PowerShell-এর output পড়া
-            BufferedReader reader =
-                    new BufferedReader(
-                            new InputStreamReader(process.getInputStream())
-                    );
-
-            String line;
-
-            System.out.println("Checking USB devices...\n");
-
-            boolean found = false;
-
-            // প্রতিটি USB device-এর information পড়া
-            while ((line = reader.readLine()) != null) {
-
-                if (!line.trim().isEmpty()) {
-
-                    System.out.println(line);
-
-                    found = true;
-                }
-            }
-
-            // কোনো USB device না পাওয়া গেলে
-            if (!found) {
-
-                System.out.println("No USB device found.");
-            }
-
-            reader.close();
-
-        } catch (Exception e) {
-
-            System.out.println("Error: " + e.getMessage());
-        }
+        System.out.println(device);
     }
 }
