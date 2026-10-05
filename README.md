@@ -8,16 +8,16 @@ A Java desktop application that monitors USB devices, logs USB activity, and sca
 * Shows device name, ID, and status
 * Monitors USB connect/disconnect events
 * Logs activities with timestamps
-* Scans USB drives for suspicious file types
-* Supports trusted and blacklisted devices
-* Provides a simple Java Swing dashboard
+* Scans for suspicious file types
+* Shows alerts for unknown USB devices
+* Java Swing dashboard
 
 ## Tech Stack
 
 * Java
 * Java Swing
 * PowerShell / WMI
-* Object-Oriented Programming
+* OOP and DSA
 
 ## Requirements
 
@@ -27,43 +27,43 @@ A Java desktop application that monitors USB devices, logs USB activity, and sca
 
 ## Run Locally
 
-Clone the repository:
-
 ```bash
 git clone https://github.com/Sania-Raisa/USB-Security.git
 cd USB-Security
 ```
-
-Compile and run:
 
 ```bash
 javac -encoding UTF-8 -d out Dashboard.java src/*.java
 java -cp out Dashboard
 ```
 
-To run the console USB monitor:
+## Project Workflow
 
-```bash
-java -cp out USBDeviceMonitor
+```text
+USB Device
+    ↓
+Device Detection
+    ↓
+Device Monitoring
+    ↓
+Security Check
+    ↓
+Unknown Device → Security Alert
+    ↓
+Activity Log
+    ↓
+Dashboard
 ```
 
 ## Main Functions
 
-| Function         |Description                                  |
-| ---------------- | -------------------------------------------- |
-| Refresh Devices  | Shows currently connected USB devices        |
-| Start Monitoring | Detects USB connect/disconnect events        |
-| Security Status  | Checks the selected device                   |
-| Scan USB Drive   | Scans a removable drive for suspicious files |
-| Clear Log        | Clears the activity log                      |
-
-## Suspicious File Detection
-
-The scanner checks for potentially risky file types such as:
-
-`.exe` `.bat` `.cmd` `.vbs` `.scr` `.js`
-
-> This is a rule-based scanner for educational purposes. It is not a replacement for antivirus software.
+| Function         | Description                 |
+| ---------------- | --------------------------- |
+| Refresh Devices  | Shows connected USB devices |
+| Start Monitoring | Detects USB events          |
+| Security Status  | Checks device status        |
+| Scan USB Drive   | Finds suspicious files      |
+| Clear Log        | Clears activity history     |
 
 ## Project Structure
 
@@ -80,13 +80,18 @@ USB-Security/
     └── USBDeviceMonitor.java
 ```
 
+## Suspicious File Detection
+
+Checks file types such as `.exe`, `.bat`, `.cmd`, `.vbs`, `.scr`, and `.js`.
+
+> Rule-based scanner for educational purposes. Not a replacement for antivirus software.
+
 ## Future Improvements
 
-* Show scan results directly in the GUI
 * Improve trusted/blacklisted device management
-* Add automatic alerts for unknown devices
 * Add automatic blocking of untrusted devices
+* Improve file scanning rules
 
 ## Note
 
-This project is developed for educational purposes using Core Java, OOP, DSA, and Java Swing.
+Developed for educational purposes using Core Java, OOP, DSA, and Java Swing.
