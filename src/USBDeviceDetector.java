@@ -1,66 +1,80 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+
 public class USBDeviceDetector {
-    // Computer-এর USB devices detect করার method
-    public static void detectUSBDevices() {
+
+    // USB devices detect করে String হিসেবে return করবে
+    public static String getUSBDevices() {
+
+        StringBuilder result = new StringBuilder();
+
         try {
 
-            // Windows PowerShell command
-            // USB connected devices-এর Name, Device ID এবং Status নেয়
             String command =
                     "powershell.exe -Command " +
                     "\"Get-CimInstance Win32_PnPEntity | " +
                     "Where-Object {$_.PNPDeviceID -like 'USB*'} | " +
-                    "Select-Object Name,PNPDeviceID,Status\"";
+                    "Select-Object Name,PNPDeviceID,Status | " +
+                    "Format-List\"";
 
-            // PowerShell command চালানো
-            Process process = Runtime.getRuntime().exec(command);
+            Process process =
+                    Runtime.getRuntime().exec(command);
 
-            // Command-এর output পড়া
             BufferedReader reader =
                     new BufferedReader(
-                            new InputStreamReader(process.getInputStream())
+                            new InputStreamReader(
+                                    process.getInputStream()
+                            )
                     );
 
             String line;
             boolean usbFound = false;
 
-            System.out.println("USB Device Detection");
-            System.out.println("========================");
-
-            // প্রতিটি USB device-এর information পড়া
             while ((line = reader.readLine()) != null) {
 
                 line = line.trim();
 
                 if (!line.isEmpty()) {
 
-                    System.out.println(line);
+                    result.append(line);
+                    result.append("\n");
 
                     usbFound = true;
                 }
-            }
-
-            // কোনো USB device না পাওয়া গেলে
-            if (!usbFound) {
-
-                System.out.println("No USB device detected.");
             }
 
             reader.close();
 
             process.waitFor();
 
+            if (!usbFound) {
+                return "No USB device detected.";
+            }
+
         } catch (Exception e) {
 
-            System.out.println("Error detecting USB device.");
-            e.printStackTrace();
+            return "Error detecting USB device.";
         }
+
+        return result.toString();
+
     }
-    // Program আলাদাভাবে Run করার জন্য main method
-   
+
+
+    // আগের method-টাও রাখছি
+    public static void detectUSBDevices() {
+
+        System.out.println("USB Device Detection");
+        System.out.println("========================");
+
+        System.out.println(getUSBDevices());
+
+    }
+
+
     public static void main(String[] args) {
 
         detectUSBDevices();
+
     }
 }
