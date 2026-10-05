@@ -18,6 +18,9 @@ public class Dashboard extends JFrame {
     // Status label
     private JLabel statusLabel;
 
+    // Prevent multiple monitoring threads
+    private boolean monitoringStarted = false;
+
     // Constructor
     public Dashboard() {
 
@@ -34,10 +37,12 @@ public class Dashboard extends JFrame {
         loadUSBDevices();
     }
 
-    // Create the complete dashboard
+    // =====================================================
+    // CREATE GUI
+    // =====================================================
+
     private void createGUI() {
 
-        // Main panel
         JPanel mainPanel =
                 new JPanel(new BorderLayout(10, 10));
 
@@ -128,11 +133,9 @@ public class Dashboard extends JFrame {
                 ListSelectionModel.SINGLE_SELECTION
         );
 
-        // Table scroll
         JScrollPane tableScrollPane =
                 new JScrollPane(deviceTable);
 
-        // Device title
         JLabel deviceTitle =
                 new JLabel("Connected USB Devices");
 
@@ -172,7 +175,7 @@ public class Dashboard extends JFrame {
         JButton clearButton =
                 new JButton("Clear Log");
 
-        // Refresh button
+        // Refresh
         refreshButton.addActionListener(e -> {
 
             loadUSBDevices();
@@ -182,28 +185,28 @@ public class Dashboard extends JFrame {
             );
         });
 
-        // Monitor button
+        // Monitoring
         monitorButton.addActionListener(e -> {
 
             startMonitoring();
 
         });
 
-        // Security button
+        // Security
         securityButton.addActionListener(e -> {
 
             showSecurityMessage();
 
         });
 
-        // Scan button
+        // Scan
         scanButton.addActionListener(e -> {
 
             scanUSBDrive();
 
         });
 
-        // Clear log button
+        // Clear
         clearButton.addActionListener(e -> {
 
             logArea.setText("");
@@ -220,13 +223,9 @@ public class Dashboard extends JFrame {
                 );
 
         buttonPanel.add(refreshButton);
-
         buttonPanel.add(monitorButton);
-
         buttonPanel.add(securityButton);
-
         buttonPanel.add(scanButton);
-
         buttonPanel.add(clearButton);
 
         devicePanel.add(
@@ -312,7 +311,6 @@ public class Dashboard extends JFrame {
                 BorderLayout.SOUTH
         );
 
-        // Add main panel to window
         add(mainPanel);
     }
 
@@ -376,7 +374,6 @@ public class Dashboard extends JFrame {
                                     line.indexOf(":") + 1
                             ).trim();
 
-                    // Complete device information পাওয়া গেছে
                     tableModel.addRow(
                             new Object[]{
                                     name,
@@ -399,10 +396,6 @@ public class Dashboard extends JFrame {
                     "Status: USB devices loaded"
             );
 
-            addLog(
-                    "USB device information loaded successfully."
-            );
-
         } catch (Exception e) {
 
             statusLabel.setText(
@@ -421,15 +414,36 @@ public class Dashboard extends JFrame {
 
     private void startMonitoring() {
 
+        if (monitoringStarted) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "USB monitoring is already running.",
+                    "USB Monitoring",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            return;
+        }
+
+        monitoringStarted = true;
+
         Thread monitorThread =
                 new Thread(() -> {
 
-                    String previousDevices =
-                            getUSBDeviceList();
+                    String previousDrives =
+                            getRemovableDrives();
 
-                    addLog(
-                            "USB monitoring started."
-                    );
+                    SwingUtilities.invokeLater(() -> {
+
+                        addLog(
+                                "USB monitoring started."
+                        );
+
+                        statusLabel.setText(
+                                "Status: Monitoring USB devices..."
+                        );
+                    });
 
                     while (true) {
 
@@ -437,24 +451,71 @@ public class Dashboard extends JFrame {
 
                             Thread.sleep(2000);
 
-                            String currentDevices =
-                                    getUSBDeviceList();
+                            String currentDrives =
+                                    getRemovableDrives();
 
-                            if (!currentDevices.equals(
-                                    previousDevices)) {
+                            // New removable drive detected
+                            if (!currentDrives.equals(
+                                    previousDrives)) {
 
-                                SwingUtilities.invokeLater(() -> {
+                                String newDrive =
+                                        findNewDrive(
+                                                previousDrives,
+                                                currentDrives
+                                        );
 
-                                    loadUSBDevices();
+                                if (!newDrive.isEmpty()
+                                        && !previousDrives.contains(
+                                                newDrive)) {
 
-                                    addLog(
-                                            "USB device list changed."
-                                    );
+                                    SwingUtilities.invokeLater(() -> {
 
-                                });
+                                        loadUSBDevices();
 
-                                previousDevices =
-                                        currentDevices;
+                                        addLog(
+                                                "Unknown USB device detected: "
+                                                        + newDrive
+                                        );
+
+                                        statusLabel.setText(
+                                                "Status: UNKNOWN USB DEVICE DETECTED"
+                                        );
+
+                                        // ALERT POPUP
+                                        JOptionPane.showMessageDialog(
+                                                this,
+                                                "Unknown USB device detected!\n\n"
+                                                        + "Drive: "
+                                                        + newDrive
+                                                        + "\n\n"
+                                                        + "Security Status: UNKNOWN\n\n"
+                                                        + "Please check this device.",
+                                                "USB Security Alert",
+                                                JOptionPane.WARNING_MESSAGE
+                                        );
+                                    });
+                                }
+
+                                // Check for removed USB
+                                if (currentDrives.length()
+                                        < previousDrives.length()) {
+
+                                    SwingUtilities.invokeLater(() -> {
+
+                                        loadUSBDevices();
+
+                                        addLog(
+                                                "USB device disconnected."
+                                        );
+
+                                        statusLabel.setText(
+                                                "Status: USB device disconnected"
+                                        );
+                                    });
+                                }
+
+                                previousDrives =
+                                        currentDrives;
                             }
 
                         } catch (
@@ -471,23 +532,29 @@ public class Dashboard extends JFrame {
 
         JOptionPane.showMessageDialog(
                 this,
-                "USB monitoring started."
+                "USB monitoring started.\n\n"
+                        + "Now connect your pendrive.",
+                "USB Monitoring",
+                JOptionPane.INFORMATION_MESSAGE
         );
     }
 
-    // Get current USB device list
-    private String getUSBDeviceList() {
+    // =====================================================
+    // GET REMOVABLE USB DRIVES
+    // =====================================================
 
-        StringBuilder devices =
+    private String getRemovableDrives() {
+
+        StringBuilder drives =
                 new StringBuilder();
 
         try {
 
             String command =
                     "powershell.exe -Command " +
-                    "\"Get-CimInstance Win32_PnPEntity | " +
-                    "Where-Object {$_.PNPDeviceID -like 'USB*'} | " +
-                    "ForEach-Object {$_.PNPDeviceID}\"";
+                    "\"Get-CimInstance Win32_LogicalDisk | " +
+                    "Where-Object {$_.DriveType -eq 2} | " +
+                    "Select-Object -ExpandProperty DeviceID\"";
 
             Process process =
                     Runtime.getRuntime().exec(command);
@@ -505,11 +572,11 @@ public class Dashboard extends JFrame {
 
                 if (!line.trim().isEmpty()) {
 
-                    devices.append(
+                    drives.append(
                             line.trim()
                     );
 
-                    devices.append("\n");
+                    drives.append("\n");
                 }
             }
 
@@ -522,7 +589,32 @@ public class Dashboard extends JFrame {
             return "";
         }
 
-        return devices.toString();
+        return drives.toString();
+    }
+
+    // =====================================================
+    // FIND NEW DRIVE
+    // =====================================================
+
+    private String findNewDrive(
+            String oldDrives,
+            String newDrives) {
+
+        String[] drives =
+                newDrives.split("\\R");
+
+        for (String drive : drives) {
+
+            drive = drive.trim();
+
+            if (!drive.isEmpty()
+                    && !oldDrives.contains(drive)) {
+
+                return drive;
+            }
+        }
+
+        return "";
     }
 
     // =====================================================
@@ -578,7 +670,8 @@ public class Dashboard extends JFrame {
                         JOptionPane.QUESTION_MESSAGE
                 );
 
-        if (drive == null || drive.trim().isEmpty()) {
+        if (drive == null
+                || drive.trim().isEmpty()) {
 
             return;
         }
