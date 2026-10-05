@@ -13,10 +13,10 @@ public class USBDeviceMonitor {
         try {
 
             String command =
-                    "powershell.exe -Command " +
-                    "\"Get-CimInstance Win32_PnPEntity | " +
-                    "Where-Object {$_.PNPDeviceID -like 'USB*'} | " +
-                    "ForEach-Object {$_.PNPDeviceID}\"";
+                    "powershell.exe -Command "
+                    + "\"Get-CimInstance Win32_PnPEntity | "
+                    + "Where-Object {$_.PNPDeviceID -like 'USB*'} | "
+                    + "ForEach-Object {$_.PNPDeviceID}\"";
 
             Process process = Runtime.getRuntime().exec(command);
 
@@ -52,6 +52,7 @@ public class USBDeviceMonitor {
         return devices;
     }
 
+
     // USB device continuously monitor করবে
     public static void monitorUSB() {
 
@@ -62,15 +63,22 @@ public class USBDeviceMonitor {
         System.out.println("Monitoring USB devices...");
         System.out.println();
 
+
         while (true) {
 
             try {
 
+                // প্রতি 2 second পরপর USB check করবে
                 Thread.sleep(2000);
 
-                Set<String> currentDevices = getUSBDevices();
+                Set<String> currentDevices =
+                        getUSBDevices();
 
-                // নতুন USB device connected
+
+                // ==============================
+                // NEW USB DEVICE CONNECTED
+                // ==============================
+
                 for (String device : currentDevices) {
 
                     if (!previousDevices.contains(device)) {
@@ -90,10 +98,17 @@ public class USBDeviceMonitor {
                         System.out.println(
                                 "------------------------"
                         );
+
+                        // পরে এখানেই SecurityManager
+                        // দিয়ে USB scan করানো হবে
                     }
                 }
 
-                // USB device disconnected
+
+                // ==============================
+                // USB DEVICE DISCONNECTED
+                // ==============================
+
                 for (String device : previousDevices) {
 
                     if (!currentDevices.contains(device)) {
@@ -116,7 +131,8 @@ public class USBDeviceMonitor {
                     }
                 }
 
-                // Current list save করে রাখবে
+
+                // Current devices save করে রাখবে
                 previousDevices = currentDevices;
 
             } catch (InterruptedException e) {
@@ -129,7 +145,7 @@ public class USBDeviceMonitor {
             }
         }
     }
-
+    
     // Program run করার জন্য main method
     public static void main(String[] args) {
 
