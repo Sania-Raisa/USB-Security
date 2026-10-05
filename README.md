@@ -1,97 +1,74 @@
 # Smart USB Security System
 
-A Java desktop application that monitors USB devices, logs USB activity, and scans removable drives for suspicious files.
+A Java desktop application that monitors USB devices, logs connection activity, and scans removable drives for suspicious files.
 
 ## Features
 
-* Detects connected USB devices
-* Shows device name, ID, and status
-* Monitors USB connect/disconnect events
-* Logs activities with timestamps
-* Scans for suspicious file types
-* Shows alerts for unknown USB devices
-* Java Swing dashboard
+- **Device detection**: lists connected USB devices with name, device ID and status
+- **Live monitoring**: detects connect/disconnect events (polls every 2 seconds)
+- **Activity logging**: records events with timestamps in `activity_log.txt`
+- **Drive scanner**: recursively scans a drive and flags risky file types (`.exe`, `.bat`, `.cmd`, `.vbs`, `.scr`, `.js`)
+- **Device trust model**: `SecurityManager` supports trusted and blacklisted device lists
+- **Swing dashboard**: simple GUI to access all of the above
 
 ## Tech Stack
 
-* Java
-* Java Swing
-* PowerShell / WMI
-* OOP and DSA
+Java (Swing) · PowerShell / WMI (`Win32_PnPEntity`)
 
 ## Requirements
 
-* Windows OS
-* JDK 8 or higher
-* Git
+- **Windows** (device detection uses PowerShell)
+- **JDK 8 or higher** (JDK 17+ recommended)
+- Git
 
 ## Run Locally
 
 ```bash
-git clone https://github.com/Sania-Raisa/USB-Security.git
+git clone https://github.com/<your-username>/USB-Security.git
 cd USB-Security
-```
-
-```bash
+javac -version
 javac -encoding UTF-8 -d out Dashboard.java src/*.java
 java -cp out Dashboard
 ```
 
-## Project Workflow
+Run the console monitor instead of the GUI:
 
-```text
-USB Device
-    ↓
-Device Detection
-    ↓
-Device Monitoring
-    ↓
-Security Check
-    ↓
-Unknown Device → Security Alert
-    ↓
-Activity Log
-    ↓
-Dashboard
+```bash
+java -cp out USBDeviceMonitor
 ```
 
-## Main Functions
+## Usage
 
-| Function         | Description                 |
-| ---------------- | --------------------------- |
-| Refresh Devices  | Shows connected USB devices |
-| Start Monitoring | Detects USB events          |
-| Security Status  | Checks device status        |
-| Scan USB Drive   | Finds suspicious files      |
-| Clear Log        | Clears activity history     |
+| Button | Action |
+|---|---|
+| Refresh Devices | Reloads the list of connected USB devices |
+| Start Monitoring | Watches for USB changes in the background |
+| Security Status | Shows the status of the selected device |
+| Scan USB Drive | Scans a drive (e.g. `E:\`); results appear in the console |
+| Clear Log | Clears the on-screen activity log |
 
 ## Project Structure
 
-```text
+```
 USB-Security/
-├── Dashboard.java
-├── activity_log.txt
+├── Dashboard.java            # Swing GUI (entry point)
+├── main.java
+├── activity_log.txt          # Generated event log
 └── src/
-    ├── ActivityLogger.java
-    ├── FileScanner.java
-    ├── SecurityManager.java
+    ├── ActivityLogger.java   # Timestamped event logging
+    ├── FileScanner.java      # Suspicious file detection
+    ├── SecurityManager.java  # Trusted / blacklisted devices
     ├── USBDeviceDetector.java
-    ├── USBDeviceInfo.java
-    └── USBDeviceMonitor.java
+    ├── USBDeviceInfo.java    # Device data model
+    └── USBDeviceMonitor.java # Connect/disconnect monitor
 ```
 
-## Suspicious File Detection
+## Roadmap
 
-Checks file types such as `.exe`, `.bat`, `.cmd`, `.vbs`, `.scr`, and `.js`.
+- Integrate trusted/blacklist checks into the dashboard
+- Show scan results inside the GUI
+- Auto-block untrusted devices
 
-> Rule-based scanner for educational purposes. Not a replacement for antivirus software.
+## Notes
 
-## Future Improvements
-
-* Improve trusted/blacklisted device management
-* Add automatic blocking of untrusted devices
-* Improve file scanning rules
-
-## Note
-
-Developed for educational purposes using Core Java, OOP, DSA, and Java Swing.
+This project is for educational purposes.
