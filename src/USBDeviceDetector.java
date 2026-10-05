@@ -1,11 +1,8 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-
 public class USBDeviceDetector {
-
     // Computer-এর USB devices detect করার method
     public static void detectUSBDevices() {
-
         try {
 
             // Windows PowerShell command
@@ -60,8 +57,8 @@ public class USBDeviceDetector {
             e.printStackTrace();
         }
     }
-
     // Program আলাদাভাবে Run করার জন্য main method
+   
     public static void main(String[] args) {
 
         detectUSBDevices();

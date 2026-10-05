@@ -2,6 +2,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import javax.swing.JOptionPane;
 
 public class ActivityLogger {
 
@@ -22,8 +23,7 @@ public class ActivityLogger {
 
         try {
 
-            // true means new log will be added,
-            // old logs will not be deleted
+            // true means new log will be added
             FileWriter writer = new FileWriter(LOG_FILE, true);
 
             // Write date, time and activity
@@ -31,6 +31,16 @@ public class ActivityLogger {
 
             // Close the file
             writer.close();
+
+            // Show alert popup
+            JOptionPane.showMessageDialog(
+                    null,
+                    "USB Security Alert!\n\n"
+                    + activity
+                    + "\n\nPlease check this device.",
+                    "USB Security Alert",
+                    JOptionPane.WARNING_MESSAGE
+            );
 
         } catch (IOException e) {
 
@@ -43,7 +53,7 @@ public class ActivityLogger {
     // Test the ActivityLogger separately
     public static void main(String[] args) {
 
-        logActivity("USB device connected.");
+        logActivity("Unknown USB device connected.");
 
         logActivity("USB device disconnected.");
 
