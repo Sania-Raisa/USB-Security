@@ -5,928 +5,1530 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 public class Dashboard extends JFrame {
-        
-// USB device table
-private JTable deviceTable;
 
-// Table data model
-private DefaultTableModel tableModel;
+    private JTable deviceTable;
+    private DefaultTableModel tableModel;
+    private JTextArea logArea;
+    private JLabel statusLabel;
 
-// Activity log area
-private JTextArea logArea;
+    private SecurityManager securityManager;
 
-// Status label
-private JLabel statusLabel;
+    private boolean monitoringStarted = false;
 
-// Security manager
-private SecurityManager securityManager;
+    // =====================================================
+    // CONSTRUCTOR
+    // =====================================================
 
-// Prevent multiple monitoring threads
-private boolean monitoringStarted = false;
+    public Dashboard() {
 
-// Constructor
-public Dashboard() {
+        setTitle("Smart USB Security System");
 
-    setTitle("Smart USB Security System");
+        setSize(1000, 700);
 
-    setSize(950, 650);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
 
-    setLocationRelativeTo(null);
+        securityManager = new SecurityManager();
 
-    // Create SecurityManager object
-    securityManager = new SecurityManager();
-
-    createGUI();
-
-    loadUSBDevices();
-}
-
-// =====================================================
-// CREATE GUI
-// =====================================================
-
-private void createGUI() {
-
-    JPanel mainPanel =
-            new JPanel(new BorderLayout(10, 10));
-
-    mainPanel.setBorder(
-            BorderFactory.createEmptyBorder(
-                    15, 15, 15, 15
-            )
-    );
-
-    // =================================================
-    // HEADER
-    // =================================================
-
-    JLabel titleLabel =
-            new JLabel(
-                    "SMART USB SECURITY SYSTEM",
-                    SwingConstants.CENTER
-            );
-
-    titleLabel.setFont(
-            new Font("Arial", Font.BOLD, 25)
-    );
-
-    JLabel subtitleLabel =
-            new JLabel(
-                    "USB Device Monitoring and Security Dashboard",
-                    SwingConstants.CENTER
-            );
-
-    subtitleLabel.setFont(
-            new Font("Arial", Font.PLAIN, 14)
-    );
-
-    JPanel headerPanel =
-            new JPanel(new BorderLayout());
-
-    headerPanel.add(
-            titleLabel,
-            BorderLayout.CENTER
-    );
-
-    headerPanel.add(
-            subtitleLabel,
-            BorderLayout.SOUTH
-    );
-
-    mainPanel.add(
-            headerPanel,
-            BorderLayout.NORTH
-    );
-
-    // =================================================
-    // USB DEVICE TABLE
-    // =================================================
-
-    String[] columns = {
-            "Device Name",
-            "Device ID",
-            "Status",
-            "Security"
-    };
-
-    tableModel =
-            new DefaultTableModel(columns, 0) {
-
-                @Override
-                public boolean isCellEditable(
-                        int row,
-                        int column) {
-
-                    return false;
-                }
-            };
-
-    deviceTable =
-            new JTable(tableModel);
-
-    deviceTable.setRowHeight(28);
-
-    deviceTable.setFont(
-            new Font("Arial", Font.PLAIN, 13)
-    );
-
-    deviceTable.getTableHeader().setFont(
-            new Font("Arial", Font.BOLD, 14)
-    );
-
-    deviceTable.setSelectionMode(
-            ListSelectionModel.SINGLE_SELECTION
-    );
-
-    JScrollPane tableScrollPane =
-            new JScrollPane(deviceTable);
-
-    JLabel deviceTitle =
-            new JLabel("Connected USB Devices");
-
-    deviceTitle.setFont(
-            new Font("Arial", Font.BOLD, 18)
-    );
-
-    JPanel devicePanel =
-            new JPanel(new BorderLayout(5, 5));
-
-    devicePanel.add(
-            deviceTitle,
-            BorderLayout.NORTH
-    );
-
-    devicePanel.add(
-            tableScrollPane,
-            BorderLayout.CENTER
-    );
-
-    // =================================================
-    // BUTTONS
-    // =================================================
-
-    JButton refreshButton =
-            new JButton("Refresh Devices");
-
-    JButton monitorButton =
-            new JButton("Start Monitoring");
-
-    JButton securityButton =
-            new JButton("Security Status");
-
-    JButton scanButton =
-            new JButton("Scan USB Drive");
-
-    JButton clearButton =
-            new JButton("Clear Log");
-
-    // =================================================
-    // REFRESH BUTTON
-    // =================================================
-
-    refreshButton.addActionListener(e -> {
+        createGUI();
 
         loadUSBDevices();
+    }
 
-        addLog(
-                "USB device list refreshed."
+    // =====================================================
+    // CREATE GUI
+    // =====================================================
+
+    private void createGUI() {
+
+        JPanel mainPanel =
+                new JPanel(new BorderLayout(10, 10));
+
+        mainPanel.setBorder(
+                BorderFactory.createEmptyBorder(
+                        15, 15, 15, 15
+                )
         );
-    });
 
-    // =================================================
-    // MONITOR BUTTON
-    // =================================================
+        // =================================================
+        // HEADER
+        // =================================================
 
-    monitorButton.addActionListener(e -> {
+        JLabel titleLabel =
+                new JLabel(
+                        "SMART USB SECURITY SYSTEM",
+                        SwingConstants.CENTER
+                );
 
-        startMonitoring();
+        titleLabel.setFont(
+                new Font("Arial", Font.BOLD, 25)
+        );
 
-    });
+        JLabel subtitleLabel =
+                new JLabel(
+                        "USB Device Monitoring and Security Dashboard",
+                        SwingConstants.CENTER
+                );
 
-    // =================================================
-    // SECURITY BUTTON
-    // =================================================
+        subtitleLabel.setFont(
+                new Font("Arial", Font.PLAIN, 14)
+        );
 
-    securityButton.addActionListener(e -> {
+        JPanel headerPanel =
+                new JPanel(new BorderLayout());
 
-        showSecurityMessage();
+        headerPanel.add(
+                titleLabel,
+                BorderLayout.CENTER
+        );
 
-    });
+        headerPanel.add(
+                subtitleLabel,
+                BorderLayout.SOUTH
+        );
 
-    // =================================================
-    // SCAN BUTTON
-    // =================================================
+        mainPanel.add(
+                headerPanel,
+                BorderLayout.NORTH
+        );
 
-    scanButton.addActionListener(e -> {
+        // =================================================
+        // USB DEVICE TABLE
+        // =================================================
 
-        scanUSBDrive();
+        String[] columns = {
+                "Device Name",
+                "Device ID",
+                "Status",
+                "Security"
+        };
 
-    });
+        tableModel =
+                new DefaultTableModel(columns, 0) {
 
-    // =================================================
-    // CLEAR LOG BUTTON
-    // =================================================
+                    @Override
+                    public boolean isCellEditable(
+                            int row,
+                            int column) {
 
-    clearButton.addActionListener(e -> {
+                        return false;
+                    }
+                };
 
-        logArea.setText("");
+        deviceTable =
+                new JTable(tableModel);
 
-    });
+        deviceTable.setRowHeight(28);
 
-    JPanel buttonPanel =
-            new JPanel(
-                    new FlowLayout(
-                            FlowLayout.LEFT,
-                            8,
-                            5
-                    )
+        deviceTable.setFont(
+                new Font("Arial", Font.PLAIN, 13)
+        );
+
+        deviceTable.getTableHeader().setFont(
+                new Font("Arial", Font.BOLD, 14)
+        );
+
+        deviceTable.setSelectionMode(
+                ListSelectionModel.SINGLE_SELECTION
+        );
+
+        // Double click device
+        deviceTable.addMouseListener(
+                new java.awt.event.MouseAdapter() {
+
+                    @Override
+                    public void mouseClicked(
+                            java.awt.event.MouseEvent e) {
+
+                        if (e.getClickCount() == 2) {
+
+                            showSecurityMessage();
+                        }
+                    }
+                }
+        );
+
+        JScrollPane tableScrollPane =
+                new JScrollPane(deviceTable);
+
+        JLabel deviceTitle =
+                new JLabel("Connected USB Devices");
+
+        deviceTitle.setFont(
+                new Font("Arial", Font.BOLD, 18)
+        );
+
+        JPanel devicePanel =
+                new JPanel(new BorderLayout(5, 5));
+
+        devicePanel.add(
+                deviceTitle,
+                BorderLayout.NORTH
+        );
+
+        devicePanel.add(
+                tableScrollPane,
+                BorderLayout.CENTER
+        );
+
+        // =================================================
+        // BUTTONS
+        // =================================================
+
+        JButton refreshButton =
+                new JButton("Refresh Devices");
+
+        JButton monitorButton =
+                new JButton("Start Monitoring");
+
+        JButton securityButton =
+                new JButton("Security Status");
+
+        JButton trustButton =
+                new JButton("Trust Device");
+
+        JButton blockButton =
+                new JButton("Block Device");
+
+        JButton removeSecurityButton =
+                new JButton("Remove Security");
+
+        JButton scanButton =
+                new JButton("Scan USB Drive");
+
+        JButton clearButton =
+                new JButton("Clear Log");
+
+        // =================================================
+        // REFRESH
+        // =================================================
+
+        refreshButton.addActionListener(e -> {
+
+            loadUSBDevices();
+
+            addLog(
+                    "USB device list refreshed."
             );
+        });
 
-    buttonPanel.add(refreshButton);
-    buttonPanel.add(monitorButton);
-    buttonPanel.add(securityButton);
-    buttonPanel.add(scanButton);
-    buttonPanel.add(clearButton);
+        // =================================================
+        // MONITOR
+        // =================================================
 
-    devicePanel.add(
-            buttonPanel,
-            BorderLayout.SOUTH
-    );
+        monitorButton.addActionListener(e -> {
 
-    mainPanel.add(
-            devicePanel,
-            BorderLayout.CENTER
-    );
+            startMonitoring();
 
-    // =================================================
-    // ACTIVITY LOG
-    // =================================================
+        });
 
-    logArea =
-            new JTextArea(8, 30);
+        // =================================================
+        // SECURITY STATUS
+        // =================================================
 
-    logArea.setEditable(false);
+        securityButton.addActionListener(e -> {
 
-    logArea.setLineWrap(true);
+            showSecurityMessage();
 
-    logArea.setWrapStyleWord(true);
+        });
 
-    logArea.setFont(
-            new Font(
-                    "Monospaced",
-                    Font.PLAIN,
-                    13
-            )
-    );
+        // =================================================
+        // TRUST
+        // =================================================
 
-    JScrollPane logScrollPane =
-            new JScrollPane(logArea);
+        trustButton.addActionListener(e -> {
 
-    JLabel logTitle =
-            new JLabel("Activity Log");
+            trustSelectedDevice();
 
-    logTitle.setFont(
-            new Font("Arial", Font.BOLD, 17)
-    );
+        });
 
-    JPanel logPanel =
-            new JPanel(new BorderLayout(5, 5));
+        // =================================================
+        // BLOCK
+        // =================================================
 
-    logPanel.add(
-            logTitle,
-            BorderLayout.NORTH
-    );
+        blockButton.addActionListener(e -> {
 
-    logPanel.add(
-            logScrollPane,
-            BorderLayout.CENTER
-    );
+            blockSelectedDevice();
 
-    // =================================================
-    // STATUS
-    // =================================================
+        });
 
-    statusLabel =
-            new JLabel("Status: Ready");
+        // =================================================
+        // REMOVE SECURITY
+        // =================================================
 
-    statusLabel.setFont(
-            new Font("Arial", Font.BOLD, 13)
-    );
+        removeSecurityButton.addActionListener(e -> {
 
-    JPanel bottomPanel =
-            new JPanel(new BorderLayout(5, 5));
+            removeSelectedDeviceSecurity();
 
-    bottomPanel.add(
-            logPanel,
-            BorderLayout.CENTER
-    );
+        });
 
-    bottomPanel.add(
-            statusLabel,
-            BorderLayout.SOUTH
-    );
+        // =================================================
+        // SCAN USB
+        // =================================================
 
-    mainPanel.add(
-            bottomPanel,
-            BorderLayout.SOUTH
-    );
+        scanButton.addActionListener(e -> {
 
-    add(mainPanel);
-}
+            scanUSBDrive();
 
-// =====================================================
-// LOAD USB DEVICES
-// =====================================================
+        });
 
-private void loadUSBDevices() {
+        // =================================================
+        // CLEAR LOG
+        // =================================================
 
-    tableModel.setRowCount(0);
+        clearButton.addActionListener(e -> {
 
-    try {
+            logArea.setText("");
 
-        String command =
-                "powershell.exe -Command " +
-                "\"Get-CimInstance Win32_PnPEntity | " +
-                "Where-Object {$_.PNPDeviceID -like 'USB*'} | " +
-                "Select-Object Name,PNPDeviceID,Status | " +
-                "Format-List\"";
+        });
 
-        Process process =
-                Runtime.getRuntime().exec(command);
+        // =================================================
+        // BUTTON PANEL
+        // =================================================
 
-        BufferedReader reader =
-                new BufferedReader(
-                        new InputStreamReader(
-                                process.getInputStream()
+        JPanel buttonPanel =
+                new JPanel(
+                        new FlowLayout(
+                                FlowLayout.LEFT,
+                                6,
+                                5
                         )
                 );
 
-        String line;
+        buttonPanel.add(refreshButton);
+        buttonPanel.add(monitorButton);
+        buttonPanel.add(securityButton);
+        buttonPanel.add(trustButton);
+        buttonPanel.add(blockButton);
+        buttonPanel.add(removeSecurityButton);
+        buttonPanel.add(scanButton);
+        buttonPanel.add(clearButton);
 
-        String name = "";
-        String deviceID = "";
-        String status = "";
+        devicePanel.add(
+                buttonPanel,
+                BorderLayout.SOUTH
+        );
 
-        while ((line = reader.readLine()) != null) {
+        mainPanel.add(
+                devicePanel,
+                BorderLayout.CENTER
+        );
 
-            line = line.trim();
+        // =================================================
+        // ACTIVITY LOG
+        // =================================================
 
-            if (line.startsWith("Name")) {
+        logArea =
+                new JTextArea(8, 30);
 
-                name =
-                        line.substring(
-                                line.indexOf(":") + 1
-                        ).trim();
+        logArea.setEditable(false);
+
+        logArea.setLineWrap(true);
+
+        logArea.setWrapStyleWord(true);
+
+        logArea.setFont(
+                new Font(
+                        "Monospaced",
+                        Font.PLAIN,
+                        13
+                )
+        );
+
+        JScrollPane logScrollPane =
+                new JScrollPane(logArea);
+
+        JLabel logTitle =
+                new JLabel("Activity Log");
+
+        logTitle.setFont(
+                new Font("Arial", Font.BOLD, 17)
+        );
+
+        JPanel logPanel =
+                new JPanel(new BorderLayout(5, 5));
+
+        logPanel.add(
+                logTitle,
+                BorderLayout.NORTH
+        );
+
+        logPanel.add(
+                logScrollPane,
+                BorderLayout.CENTER
+        );
+
+        // =================================================
+        // STATUS
+        // =================================================
+
+        statusLabel =
+                new JLabel("Status: Ready");
+
+        statusLabel.setFont(
+                new Font("Arial", Font.BOLD, 13)
+        );
+
+        JPanel bottomPanel =
+                new JPanel(new BorderLayout(5, 5));
+
+        bottomPanel.add(
+                logPanel,
+                BorderLayout.CENTER
+        );
+
+        bottomPanel.add(
+                statusLabel,
+                BorderLayout.SOUTH
+        );
+
+        mainPanel.add(
+                bottomPanel,
+                BorderLayout.SOUTH
+        );
+
+        add(mainPanel);
+    }
+
+    // =====================================================
+    // LOAD USB DEVICES
+    // =====================================================
+
+    private void loadUSBDevices() {
+
+        tableModel.setRowCount(0);
+
+        try {
+
+            String command =
+                    "powershell.exe -Command "
+                            +
+                            "\"Get-CimInstance Win32_PnPEntity | "
+                            +
+                            "Where-Object {$_.PNPDeviceID -like 'USB*'} | "
+                            +
+                            "Select-Object Name,PNPDeviceID,Status | "
+                            +
+                            "Format-List\"";
+
+            Process process =
+                    Runtime.getRuntime().exec(command);
+
+            BufferedReader reader =
+                    new BufferedReader(
+                            new InputStreamReader(
+                                    process.getInputStream()
+                            )
+                    );
+
+            String line;
+
+            String name = "";
+            String deviceID = "";
+            String status = "";
+
+            while ((line = reader.readLine()) != null) {
+
+                line = line.trim();
+
+                if (line.startsWith("Name")) {
+
+                    name =
+                            line.substring(
+                                    line.indexOf(":") + 1
+                            ).trim();
+                }
+
+                else if (line.startsWith("PNPDeviceID")) {
+
+                    deviceID =
+                            line.substring(
+                                    line.indexOf(":") + 1
+                            ).trim();
+                }
+
+                else if (line.startsWith("Status")) {
+
+                    status =
+                            line.substring(
+                                    line.indexOf(":") + 1
+                            ).trim();
+
+                    String securityStatus =
+                            checkDeviceSecurity(deviceID);
+
+                    tableModel.addRow(
+                            new Object[]{
+                                    name,
+                                    deviceID,
+                                    status,
+                                    securityStatus
+                            }
+                    );
+
+                    name = "";
+                    deviceID = "";
+                    status = "";
+                }
             }
 
-            else if (line.startsWith("PNPDeviceID")) {
+            reader.close();
 
-                deviceID =
-                        line.substring(
-                                line.indexOf(":") + 1
-                        ).trim();
-            }
+            process.waitFor();
 
-            else if (line.startsWith("Status")) {
+            statusLabel.setText(
+                    "Status: USB devices loaded"
+            );
 
-                status =
-                        line.substring(
-                                line.indexOf(":") + 1
-                        ).trim();
+        } catch (Exception e) {
 
-                // Check device security
-                String securityStatus =
-                        checkDeviceSecurity(deviceID);
+            statusLabel.setText(
+                    "Status: Error detecting USB devices"
+            );
 
-                tableModel.addRow(
-                        new Object[]{
-                                name,
-                                deviceID,
-                                status,
-                                securityStatus
-                        }
-                );
-
-                name = "";
-                deviceID = "";
-                status = "";
-            }
+            addLog(
+                    "Error detecting USB devices."
+            );
         }
-
-        reader.close();
-
-        process.waitFor();
-
-        statusLabel.setText(
-                "Status: USB devices loaded"
-        );
-
-    } catch (Exception e) {
-
-        statusLabel.setText(
-                "Status: Error detecting USB devices"
-        );
-
-        addLog(
-                "Error detecting USB devices."
-        );
-    }
-}
-
-// =====================================================
-// CHECK DEVICE SECURITY
-// =====================================================
-
-private String checkDeviceSecurity(String deviceID) {
-
-    if (deviceID == null
-            || deviceID.trim().isEmpty()) {
-
-        return "UNKNOWN";
     }
 
-    try {
+    // =====================================================
+    // CHECK DEVICE SECURITY
+    // =====================================================
 
-        String result =
-                securityManager.checkDevice(
-                        deviceID
-                );
+    private String checkDeviceSecurity(String deviceID) {
 
-        if (result == null
-                || result.trim().isEmpty()) {
+        if (deviceID == null
+                || deviceID.trim().isEmpty()) {
 
             return "UNKNOWN";
         }
 
-        return result.toUpperCase();
+        try {
 
-    } catch (Exception e) {
+            if (securityManager.isBlacklisted(deviceID)) {
 
-        addLog(
-                "Security check failed for device."
-        );
+                return "BLOCKED";
+            }
 
-        return "UNKNOWN";
-    }
-}
+            if (securityManager.isTrusted(deviceID)) {
 
-// =====================================================
-// START MONITORING
-// =====================================================
+                return "TRUSTED";
+            }
 
-private void startMonitoring() {
+            return "UNKNOWN";
 
-    if (monitoringStarted) {
+        } catch (Exception e) {
 
-        JOptionPane.showMessageDialog(
-                this,
-                "USB monitoring is already running.",
-                "USB Monitoring",
-                JOptionPane.INFORMATION_MESSAGE
-        );
-
-        return;
+            return "UNKNOWN";
+        }
     }
 
-    monitoringStarted = true;
+    // =====================================================
+    // TRUST DEVICE
+    // =====================================================
 
-    Thread monitorThread =
-            new Thread(() -> {
+    private void trustSelectedDevice() {
 
-                String previousDrives =
-                        getRemovableDrives();
+        int selectedRow =
+                deviceTable.getSelectedRow();
 
-                SwingUtilities.invokeLater(() -> {
+        if (selectedRow == -1) {
 
-                    addLog(
-                            "USB monitoring started."
-                    );
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please select a USB device first.",
+                    "Trust Device",
+                    JOptionPane.WARNING_MESSAGE
+            );
 
-                    statusLabel.setText(
-                            "Status: Monitoring USB devices..."
-                    );
-                });
+            return;
+        }
 
-                while (true) {
-
-                    try {
-
-                        Thread.sleep(2000);
-
-                        String currentDrives =
-                                getRemovableDrives();
-
-                        // New removable drive detected
-                        if (!currentDrives.equals(
-                                previousDrives)) {
-
-                            String newDrive =
-                                    findNewDrive(
-                                            previousDrives,
-                                            currentDrives
-                                    );
-
-                            if (!newDrive.isEmpty()
-                                    && !previousDrives.contains(
-                                            newDrive)) {
-
-                                SwingUtilities.invokeLater(() -> {
-
-                                    loadUSBDevices();
-
-                                    addLog(
-                                            "New USB drive detected: "
-                                                    + newDrive
-                                    );
-
-                                    statusLabel.setText(
-                                            "Status: USB DEVICE DETECTED"
-                                    );
-
-                                    // Find security status
-                                    int selectedRow =
-                                            findDeviceForDrive(
-                                                    newDrive
-                                            );
-
-                                    String securityStatus =
-                                            "UNKNOWN";
-
-                                    if (selectedRow != -1) {
-
-                                        securityStatus =
-                                                tableModel.getValueAt(
-                                                        selectedRow,
-                                                        3
-                                                ).toString();
-                                    }
-
-                                    // Alert only for UNKNOWN
-                                    if (securityStatus.equals(
-                                            "UNKNOWN")) {
-
-                                        JOptionPane.showMessageDialog(
-                                                this,
-                                                "Unknown USB device detected!\n\n"
-                                                        + "Drive: "
-                                                        + newDrive
-                                                        + "\n\n"
-                                                        + "Security Status: UNKNOWN\n\n"
-                                                        + "Please check this device.",
-                                                "USB Security Alert",
-                                                JOptionPane.WARNING_MESSAGE
-                                        );
-
-                                        addLog(
-                                                "Security alert: Unknown USB device."
-                                        );
-                                    }
-
-                                    else if (securityStatus.equals(
-                                            "BLACKLISTED")) {
-
-                                        JOptionPane.showMessageDialog(
-                                                this,
-                                                "BLACKLISTED USB device detected!\n\n"
-                                                        + "Drive: "
-                                                        + newDrive
-                                                        + "\n\n"
-                                                        + "Security Status: BLACKLISTED\n\n"
-                                                        + "Do not use this device.",
-                                                "USB Security Alert",
-                                                JOptionPane.ERROR_MESSAGE
-                                        );
-
-                                        addLog(
-                                                "Security alert: Blacklisted USB device."
-                                        );
-                                    }
-
-                                    else {
-
-                                        addLog(
-                                                "USB device security status: "
-                                                        + securityStatus
-                                        );
-                                    }
-                                });
-                            }
-
-                            // Check for removed USB
-                            if (currentDrives.length()
-                                    < previousDrives.length()) {
-
-                                SwingUtilities.invokeLater(() -> {
-
-                                    loadUSBDevices();
-
-                                    addLog(
-                                            "USB device disconnected."
-                                    );
-
-                                    statusLabel.setText(
-                                            "Status: USB device disconnected"
-                                    );
-                                });
-                            }
-
-                            previousDrives =
-                                    currentDrives;
-                        }
-
-                    } catch (
-                            InterruptedException e) {
-
-                        break;
-                    }
-                }
-            });
-
-    monitorThread.setDaemon(true);
-
-    monitorThread.start();
-
-    JOptionPane.showMessageDialog(
-            this,
-            "USB monitoring started.\n\n"
-                    + "Now connect your pendrive.",
-            "USB Monitoring",
-            JOptionPane.INFORMATION_MESSAGE
-    );
-}
-
-// =====================================================
-// FIND DEVICE FOR DRIVE
-// =====================================================
-
-private int findDeviceForDrive(String drive) {
-
-    // Refresh table first
-    loadUSBDevices();
-
-    // Current implementation uses the first
-    // available USB storage device.
-    for (int i = 0;
-         i < tableModel.getRowCount();
-         i++) {
+        String deviceName =
+                tableModel.getValueAt(
+                        selectedRow,
+                        0
+                ).toString();
 
         String deviceID =
                 tableModel.getValueAt(
-                        i,
+                        selectedRow,
                         1
                 ).toString();
 
-        if (deviceID.contains("USBSTOR")) {
+        int confirmation =
+                JOptionPane.showConfirmDialog(
+                        this,
+                        "Add this device to trusted devices?\n\n"
+                                +
+                                "Device: "
+                                +
+                                deviceName,
+                        "Trust USB Device",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE
+                );
 
-            return i;
+        if (confirmation != JOptionPane.YES_OPTION) {
+
+            return;
+        }
+
+        try {
+
+            if (securityManager.isBlacklisted(deviceID)) {
+
+                securityManager.removeBlacklistedDevice(
+                        deviceID
+                );
+            }
+
+            securityManager.addTrustedDevice(
+                    deviceID
+            );
+
+            tableModel.setValueAt(
+                    "TRUSTED",
+                    selectedRow,
+                    3
+            );
+
+            statusLabel.setText(
+                    "Status: Device marked as TRUSTED"
+            );
+
+            addLog(
+                    "Device trusted: "
+                            + deviceName
+            );
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Device has been added to the trusted list.",
+                    "Device Trusted",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+        } catch (Exception e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Could not add device to trusted list.",
+                    "Security Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
         }
     }
 
-    return -1;
-}
+    // =====================================================
+    // BLOCK DEVICE
+    // =====================================================
 
-// =====================================================
-// GET REMOVABLE USB DRIVES
-// =====================================================
+    private void blockSelectedDevice() {
 
-private String getRemovableDrives() {
+        int selectedRow =
+                deviceTable.getSelectedRow();
 
-    StringBuilder drives =
-            new StringBuilder();
+        if (selectedRow == -1) {
 
-    try {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please select a USB device first.",
+                    "Block Device",
+                    JOptionPane.WARNING_MESSAGE
+            );
 
-        String command =
-                "powershell.exe -Command " +
-                "\"Get-CimInstance Win32_LogicalDisk | " +
-                "Where-Object {$_.DriveType -eq 2} | " +
-                "Select-Object -ExpandProperty DeviceID\"";
+            return;
+        }
 
-        Process process =
-                Runtime.getRuntime().exec(command);
+        String deviceName =
+                tableModel.getValueAt(
+                        selectedRow,
+                        0
+                ).toString();
 
-        BufferedReader reader =
-                new BufferedReader(
-                        new InputStreamReader(
-                                process.getInputStream()
-                        )
+        String deviceID =
+                tableModel.getValueAt(
+                        selectedRow,
+                        1
+                ).toString();
+
+        int confirmation =
+                JOptionPane.showConfirmDialog(
+                        this,
+                        "Add this device to the blacklist?\n\n"
+                                +
+                                "Device: "
+                                +
+                                deviceName,
+                        "Block USB Device",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
                 );
 
-        String line;
+        if (confirmation != JOptionPane.YES_OPTION) {
 
-        while ((line = reader.readLine()) != null) {
+            return;
+        }
 
-            if (!line.trim().isEmpty()) {
+        try {
 
-                drives.append(
-                        line.trim()
+            if (securityManager.isTrusted(deviceID)) {
+
+                securityManager.removeTrustedDevice(
+                        deviceID
+                );
+            }
+
+            securityManager.addBlacklistedDevice(
+                    deviceID
+            );
+
+            tableModel.setValueAt(
+                    "BLOCKED",
+                    selectedRow,
+                    3
+            );
+
+            statusLabel.setText(
+                    "Status: Device marked as BLOCKED"
+            );
+
+            addLog(
+                    "Device blocked: "
+                            + deviceName
+            );
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Device has been added to the blacklist.",
+                    "Device Blocked",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+        } catch (Exception e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Could not block this device.",
+                    "Security Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    // =====================================================
+    // REMOVE SECURITY
+    // =====================================================
+
+    private void removeSelectedDeviceSecurity() {
+
+        int selectedRow =
+                deviceTable.getSelectedRow();
+
+        if (selectedRow == -1) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please select a USB device first.",
+                    "Remove Security",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            return;
+        }
+
+        String deviceName =
+                tableModel.getValueAt(
+                        selectedRow,
+                        0
+                ).toString();
+
+        String deviceID =
+                tableModel.getValueAt(
+                        selectedRow,
+                        1
+                ).toString();
+
+        String currentStatus =
+                checkDeviceSecurity(deviceID);
+
+        if (currentStatus.equals("UNKNOWN")) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "This device is already UNKNOWN.",
+                    "Remove Security",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            return;
+        }
+
+        int confirmation =
+                JOptionPane.showConfirmDialog(
+                        this,
+                        "Remove this device from its security list?\n\n"
+                                +
+                                "Device: "
+                                +
+                                deviceName,
+                        "Remove Security Status",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE
                 );
 
-                drives.append("\n");
+        if (confirmation != JOptionPane.YES_OPTION) {
+
+            return;
+        }
+
+        try {
+
+            if (securityManager.isTrusted(deviceID)) {
+
+                securityManager.removeTrustedDevice(
+                        deviceID
+                );
+            }
+
+            if (securityManager.isBlacklisted(deviceID)) {
+
+                securityManager.removeBlacklistedDevice(
+                        deviceID
+                );
+            }
+
+            tableModel.setValueAt(
+                    "UNKNOWN",
+                    selectedRow,
+                    3
+            );
+
+            statusLabel.setText(
+                    "Status: Security status removed"
+            );
+
+            addLog(
+                    "Security status removed: "
+                            + deviceName
+            );
+
+        } catch (Exception e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Could not remove security status.",
+                    "Security Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    // =====================================================
+    // START MONITORING
+    // =====================================================
+
+    private void startMonitoring() {
+
+        if (monitoringStarted) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "USB monitoring is already running.",
+                    "USB Monitoring",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            return;
+        }
+
+        monitoringStarted = true;
+
+        Thread monitorThread =
+                new Thread(() -> {
+
+                    String previousDrives =
+                            getRemovableDrives();
+
+                    SwingUtilities.invokeLater(() -> {
+
+                        addLog(
+                                "USB monitoring started."
+                        );
+
+                        statusLabel.setText(
+                                "Status: Monitoring USB devices..."
+                        );
+                    });
+
+                    while (true) {
+
+                        try {
+
+                            Thread.sleep(2000);
+
+                            String currentDrives =
+                                    getRemovableDrives();
+
+                            if (!currentDrives.equals(
+                                    previousDrives)) {
+
+                                String newDrive =
+                                        findNewDrive(
+                                                previousDrives,
+                                                currentDrives
+                                        );
+
+                                if (!newDrive.isEmpty()
+                                        && !previousDrives.contains(
+                                        newDrive)) {
+
+                                    SwingUtilities.invokeLater(() -> {
+
+                                        loadUSBDevices();
+
+                                        addLog(
+                                                "New USB drive detected: "
+                                                        + newDrive
+                                        );
+
+                                        statusLabel.setText(
+                                                "Status: USB DEVICE DETECTED"
+                                        );
+
+                                        int selectedRow =
+                                                findDeviceForDrive(
+                                                        newDrive
+                                                );
+
+                                        String securityStatus =
+                                                "UNKNOWN";
+
+                                        if (selectedRow != -1) {
+
+                                            securityStatus =
+                                                    tableModel.getValueAt(
+                                                            selectedRow,
+                                                            3
+                                                    ).toString();
+                                        }
+
+                                        if (securityStatus.equals(
+                                                "UNKNOWN")) {
+
+                                            JOptionPane.showMessageDialog(
+                                                    this,
+                                                    "Unknown USB device detected!\n\n"
+                                                            +
+                                                            "Drive: "
+                                                            + newDrive
+                                                            +
+                                                            "\n\nSecurity Status: UNKNOWN\n\n"
+                                                            +
+                                                            "Please check this device.",
+                                                    "USB Security Alert",
+                                                    JOptionPane.WARNING_MESSAGE
+                                            );
+
+                                            addLog(
+                                                    "Security alert: Unknown USB device."
+                                            );
+                                        }
+
+                                        else if (securityStatus.equals(
+                                                "BLOCKED")) {
+
+                                            JOptionPane.showMessageDialog(
+                                                    this,
+                                                    "BLOCKED USB device detected!\n\n"
+                                                            +
+                                                            "Drive: "
+                                                            + newDrive
+                                                            +
+                                                            "\n\nSecurity Status: BLOCKED\n\n"
+                                                            +
+                                                            "Do not use this device.",
+                                                    "USB Security Alert",
+                                                    JOptionPane.ERROR_MESSAGE
+                                            );
+
+                                            addLog(
+                                                    "Security alert: Blocked USB device."
+                                            );
+                                        }
+
+                                        else {
+
+                                            addLog(
+                                                    "USB device security status: "
+                                                            + securityStatus
+                                            );
+                                        }
+                                    });
+                                }
+
+                                if (currentDrives.length()
+                                        < previousDrives.length()) {
+
+                                    SwingUtilities.invokeLater(() -> {
+
+                                        loadUSBDevices();
+
+                                        addLog(
+                                                "USB device disconnected."
+                                        );
+
+                                        statusLabel.setText(
+                                                "Status: USB device disconnected"
+                                        );
+                                    });
+                                }
+
+                                previousDrives =
+                                        currentDrives;
+                            }
+
+                        } catch (InterruptedException e) {
+
+                            break;
+                        }
+                    }
+                });
+
+        monitorThread.setDaemon(true);
+
+        monitorThread.start();
+
+        JOptionPane.showMessageDialog(
+                this,
+                "USB monitoring started.\n\n"
+                        +
+                        "Now connect your pendrive.",
+                "USB Monitoring",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+    // =====================================================
+    // FIND DEVICE FOR DRIVE
+    // =====================================================
+
+    private int findDeviceForDrive(String drive) {
+
+        loadUSBDevices();
+
+        for (int i = 0;
+             i < tableModel.getRowCount();
+             i++) {
+
+            String deviceID =
+                    tableModel.getValueAt(
+                            i,
+                            1
+                    ).toString();
+
+            if (deviceID.contains("USBSTOR")) {
+
+                return i;
             }
         }
 
-        reader.close();
+        return -1;
+    }
 
-        process.waitFor();
+    // =====================================================
+    // GET REMOVABLE DRIVES
+    // =====================================================
 
-    } catch (Exception e) {
+    private String getRemovableDrives() {
+
+        StringBuilder drives =
+                new StringBuilder();
+
+        try {
+
+            String command =
+                    "powershell.exe -Command "
+                            +
+                            "\"Get-CimInstance Win32_LogicalDisk | "
+                            +
+                            "Where-Object {$_.DriveType -eq 2} | "
+                            +
+                            "Select-Object -ExpandProperty DeviceID\"";
+
+            Process process =
+                    Runtime.getRuntime().exec(command);
+
+            BufferedReader reader =
+                    new BufferedReader(
+                            new InputStreamReader(
+                                    process.getInputStream()
+                            )
+                    );
+
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+
+                if (!line.trim().isEmpty()) {
+
+                    drives.append(
+                            line.trim()
+                    );
+
+                    drives.append("\n");
+                }
+            }
+
+            reader.close();
+
+            process.waitFor();
+
+        } catch (Exception e) {
+
+            return "";
+        }
+
+        return drives.toString();
+    }
+
+    // =====================================================
+    // FIND NEW DRIVE
+    // =====================================================
+
+    private String findNewDrive(
+            String oldDrives,
+            String newDrives) {
+
+        String[] drives =
+                newDrives.split("\\R");
+
+        for (String drive : drives) {
+
+            drive = drive.trim();
+
+            if (!drive.isEmpty()
+                    && !oldDrives.contains(drive)) {
+
+                return drive;
+            }
+        }
 
         return "";
     }
 
-    return drives.toString();
-}
+    // =====================================================
+    // SECURITY STATUS MESSAGE
+    // =====================================================
 
-// =====================================================
-// FIND NEW DRIVE
-// =====================================================
+    private void showSecurityMessage() {
 
-private String findNewDrive(
-        String oldDrives,
-        String newDrives) {
+        int selectedRow =
+                deviceTable.getSelectedRow();
 
-    String[] drives =
-            newDrives.split("\\R");
+        if (selectedRow == -1) {
 
-    for (String drive : drives) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please select a USB device first.",
+                    "Security Status",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            return;
+        }
+
+        String deviceName =
+                tableModel.getValueAt(
+                        selectedRow,
+                        0
+                ).toString();
+
+        String deviceID =
+                tableModel.getValueAt(
+                        selectedRow,
+                        1
+                ).toString();
+
+        String securityStatus =
+                checkDeviceSecurity(deviceID);
+
+        tableModel.setValueAt(
+                securityStatus,
+                selectedRow,
+                3
+        );
+
+        String message =
+                "Device: "
+                        + deviceName
+                        + "\n\n"
+                        +
+                        "Device ID: "
+                        + deviceID
+                        + "\n\n"
+                        +
+                        "Security Status: "
+                        + securityStatus;
+
+        if (securityStatus.equals("BLOCKED")) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    message
+                            + "\n\nWarning: This device is blocked.",
+                    "Security Status",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+
+        else if (securityStatus.equals("TRUSTED")) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    message
+                            + "\n\nThis device is trusted.",
+                    "Security Status",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        }
+
+        else {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    message
+                            + "\n\nThis device is not in the trusted or blocked list.",
+                    "Security Status",
+                    JOptionPane.WARNING_MESSAGE
+            );
+        }
+
+        addLog(
+                "Security status checked: "
+                        + deviceName
+                        + " -> "
+                        + securityStatus
+        );
+    }
+
+    // =====================================================
+    // USB DRIVE SCANNER
+    // =====================================================
+
+    private void scanUSBDrive() {
+
+        String drive =
+                JOptionPane.showInputDialog(
+                        this,
+                        "Enter USB drive letter:\nExample: E:",
+                        "Scan USB Drive",
+                        JOptionPane.QUESTION_MESSAGE
+                );
+
+        if (drive == null
+                || drive.trim().isEmpty()) {
+
+            return;
+        }
 
         drive = drive.trim();
 
-        if (!drive.isEmpty()
-                && !oldDrives.contains(drive)) {
+        // If user enters E instead of E:
+        if (drive.length() == 1) {
 
-            return drive;
+            drive = drive + ":";
         }
-    }
 
-    return "";
-}
+        // Remove final backslash if user enters E:\
+        if (drive.endsWith("\\")) {
 
-// =====================================================
-// SECURITY STATUS
-// =====================================================
+            drive =
+                    drive.substring(
+                            0,
+                            drive.length() - 1
+                    );
+        }
 
-private void showSecurityMessage() {
+        final String selectedDrive = drive;
 
-    int selectedRow =
-            deviceTable.getSelectedRow();
-
-    if (selectedRow == -1) {
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Please select a USB device first.",
-                "Security Status",
-                JOptionPane.WARNING_MESSAGE
+        addLog(
+                "USB drive scan started: "
+                        + selectedDrive
         );
 
-        return;
-    }
-
-    String deviceName =
-            tableModel.getValueAt(
-                    selectedRow,
-                    0
-            ).toString();
-
-    String deviceID =
-            tableModel.getValueAt(
-                    selectedRow,
-                    1
-            ).toString();
-
-    // Call SecurityManager
-    String securityStatus =
-            checkDeviceSecurity(deviceID);
-
-    // Update table
-    tableModel.setValueAt(
-            securityStatus,
-            selectedRow,
-            3
-    );
-
-    String message =
-            "Device: "
-                    + deviceName
-                    + "\n\n"
-                    + "Device ID: "
-                    + deviceID
-                    + "\n\n"
-                    + "Security Status: "
-                    + securityStatus;
-
-    if (securityStatus.equals(
-            "BLACKLISTED")) {
-
-        JOptionPane.showMessageDialog(
-                this,
-                message
-                        + "\n\nWarning: This device is blacklisted.",
-                "Security Status",
-                JOptionPane.ERROR_MESSAGE
+        statusLabel.setText(
+                "Status: Scanning USB drive..."
         );
-    }
 
-    else if (securityStatus.equals(
-            "TRUSTED")) {
+        // =================================================
+        // RUN SCANNER IN BACKGROUND
+        // =================================================
+
+        Thread scanThread =
+                new Thread(() -> {
+
+                    try {
+
+                        FileScanner.ScanResult result =
+                                FileScanner.scanDrive(
+                                        selectedDrive
+                                );
+
+                        SwingUtilities.invokeLater(() -> {
+
+                            statusLabel.setText(
+                                    "Status: USB scan completed"
+                            );
+
+                            addLog(
+                                    "USB drive scan completed: "
+                                            + selectedDrive
+                            );
+
+                            showScanResult(
+                                    selectedDrive,
+                                    result
+                            );
+                        });
+
+                    } catch (Exception e) {
+
+                        SwingUtilities.invokeLater(() -> {
+
+                            statusLabel.setText(
+                                    "Status: Scan error"
+                            );
+
+                            addLog(
+                                    "USB drive scan failed: "
+                                            + selectedDrive
+                            );
+
+                            JOptionPane.showMessageDialog(
+                                    this,
+                                    "Could not scan the USB drive.\n\n"
+                                            +
+                                            e.getMessage(),
+                                    "Scanner Error",
+                                    JOptionPane.ERROR_MESSAGE
+                            );
+                        });
+                    }
+
+                });
+
+        scanThread.setDaemon(true);
+
+        scanThread.start();
 
         JOptionPane.showMessageDialog(
                 this,
-                message
-                        + "\n\nThis device is trusted.",
-                "Security Status",
+                "USB drive scanning started.\n\n"
+                        +
+                        "Drive: "
+                        + selectedDrive
+                        +
+                        "\n\n"
+                        +
+                        "Please wait for the scan to complete.",
+                "File Scanner",
                 JOptionPane.INFORMATION_MESSAGE
         );
     }
 
-    else {
+    // =====================================================
+    // SHOW SCAN RESULT
+    // =====================================================
 
-        JOptionPane.showMessageDialog(
-                this,
-                message
-                        + "\n\nThis device is not in the trusted list.",
-                "Security Status",
-                JOptionPane.WARNING_MESSAGE
+    private void showScanResult(
+            String drive,
+            FileScanner.ScanResult result) {
+
+        JTextArea resultArea =
+                new JTextArea();
+
+        resultArea.setEditable(false);
+
+        resultArea.setFont(
+                new Font(
+                        "Monospaced",
+                        Font.PLAIN,
+                        13
+                )
         );
-    }
 
-    addLog(
-            "Security status checked: "
-                    + deviceName
-                    + " -> "
-                    + securityStatus
-    );
-}
+        resultArea.setLineWrap(false);
 
-// =====================================================
-// USB DRIVE SCANNER
-// =====================================================
+        StringBuilder text =
+                new StringBuilder();
 
-private void scanUSBDrive() {
+        text.append(
+                "USB SECURITY SCAN RESULT\n"
+        );
 
-    String drive =
-            JOptionPane.showInputDialog(
-                    this,
-                    "Enter USB drive letter:\nExample: E:\\",
-                    "Scan USB Drive",
-                    JOptionPane.QUESTION_MESSAGE
+        text.append(
+                "====================================\n\n"
+        );
+
+        text.append(
+                "Drive: "
+                        + drive
+                        + "\n\n"
+        );
+
+        text.append(
+                "Total Files       : "
+                        + result.getTotalFiles()
+                        + "\n"
+        );
+
+        text.append(
+                "Safe Files        : "
+                        + result.getSafeFiles()
+                        + "\n"
+        );
+
+        text.append(
+                "Suspicious Files  : "
+                        + result.getSuspiciousCount()
+                        + "\n\n"
+        );
+
+        text.append(
+                "====================================\n"
+        );
+
+        if (result.getSuspiciousCount() > 0) {
+
+            text.append(
+                    "SUSPICIOUS FILES\n"
             );
 
-    if (drive == null
-            || drive.trim().isEmpty()) {
+            text.append(
+                    "====================================\n\n"
+            );
 
-        return;
-    }
+            for (String file :
+                    result.getSuspiciousFiles()) {
 
-    drive = drive.trim();
+                text.append(
+                        file
+                                + "\n"
+                );
+            }
 
-    FileScanner.scanDrive(drive);
+        } else {
 
-    addLog(
-            "USB drive scan started: "
-                    + drive
-    );
+            text.append(
+                    "No suspicious files were detected.\n"
+            );
+        }
 
-    JOptionPane.showMessageDialog(
-            this,
-            "Drive scan started.\n\n"
-                    + "Check the console for scan results.",
-            "File Scanner",
-            JOptionPane.INFORMATION_MESSAGE
-    );
-}
-
-// =====================================================
-// ADD ACTIVITY LOG
-// =====================================================
-
-private void addLog(String message) {
-
-    if (logArea != null) {
-
-        logArea.append(
-                message + "\n"
+        resultArea.setText(
+                text.toString()
         );
+
+        JScrollPane scrollPane =
+                new JScrollPane(resultArea);
+
+        scrollPane.setPreferredSize(
+                new Dimension(
+                        750,
+                        450
+                )
+        );
+
+        JPanel panel =
+                new JPanel(new BorderLayout(5, 5));
+
+        JLabel title =
+                new JLabel(
+                        "Scan Result - "
+                                + drive
+                );
+
+        title.setFont(
+                new Font(
+                        "Arial",
+                        Font.BOLD,
+                        16
+                )
+        );
+
+        panel.add(
+                title,
+                BorderLayout.NORTH
+        );
+
+        panel.add(
+                scrollPane,
+                BorderLayout.CENTER
+        );
+
+        if (result.getSuspiciousCount() > 0) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    panel,
+                    "USB Security Alert",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            addLog(
+                    "WARNING: "
+                            + result.getSuspiciousCount()
+                            + " suspicious file(s) detected."
+            );
+
+        } else {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    panel,
+                    "USB Scan Completed",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            addLog(
+                    "Scan completed: No suspicious files found."
+            );
+        }
     }
-}
 
-// =====================================================
-// MAIN METHOD
-// =====================================================
+    // =====================================================
+    // ADD ACTIVITY LOG
+    // =====================================================
 
-public static void main(String[] args) {
+    private void addLog(String message) {
 
-    SwingUtilities.invokeLater(() -> {
+        if (logArea != null) {
 
-        Dashboard dashboard =
-                new Dashboard();
+            logArea.append(
+                    message + "\n"
+            );
 
-        dashboard.setVisible(true);
-    });
-}
+            logArea.setCaretPosition(
+                    logArea.getDocument().getLength()
+            );
+        }
+    }
 
+    // =====================================================
+    // MAIN METHOD
+    // =====================================================
+
+    public static void main(String[] args) {
+
+        SwingUtilities.invokeLater(() -> {
+
+            Dashboard dashboard =
+                    new Dashboard();
+
+            dashboard.setVisible(true);
+        });
+    }
 }
