@@ -70,9 +70,4 @@ USB-Security/
 - Auto-block untrusted devices
 
 ## Notes
-
-<<<<<<< HEAD
-This project is for educational purposes.
-=======
-This project is for educational purposes.
->>>>>>> c599e3a (Connect SecurityManager with Dashboard)
+This project is for educational pusposes.
