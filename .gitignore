@@ -10,6 +10,7 @@
 
 # Log files
 *.log
+activity_log.txt
 
 # Build output
 out/
