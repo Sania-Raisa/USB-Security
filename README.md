@@ -69,3 +69,5 @@ USB-Security/
 - Show scan results inside the GUI
 - Auto-block untrusted devices
 
+## Notes
+This project is for educational pusposes.
