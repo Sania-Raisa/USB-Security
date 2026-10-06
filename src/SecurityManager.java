@@ -71,7 +71,7 @@ public class SecurityManager {
 
         // Blacklist has higher priority
         if (blacklistedDevices.contains(deviceID)) {
-            return "BLACKLISTED";
+            return "Flag as UNTRUSTED";
         }
 
         // Check trusted devices
