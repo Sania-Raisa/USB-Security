@@ -3,74 +3,122 @@ import java.util.List;
 
 public class SecurityManager {
 
-    // List of trusted USB devices
+    // List of trusted USB device IDs
     private List<String> trustedDevices;
 
-    // List of blacklisted USB devices
+    // List of blacklisted USB device IDs
     private List<String> blacklistedDevices;
-
 
     // Constructor
     public SecurityManager() {
 
-        // Create empty lists for trusted and blacklisted devices
         trustedDevices = new ArrayList<>();
         blacklistedDevices = new ArrayList<>();
     }
 
+    // Add a device to the trusted list
+    public void addTrustedDevice(String deviceID) {
 
-    // Add a device to the trusted device list
-    public void addTrustedDevice(String deviceName) {
+        if (deviceID == null || deviceID.trim().isEmpty()) {
+            return;
+        }
 
-        trustedDevices.add(deviceName);
+        if (!trustedDevices.contains(deviceID)) {
 
-        System.out.println(
-            deviceName + " added to trusted devices."
-        );
+            trustedDevices.add(deviceID);
+
+            System.out.println(
+                    deviceID + " added to trusted devices."
+            );
+        }
     }
-
 
     // Add a device to the blacklist
-    public void addBlacklistedDevice(String deviceName) {
+    public void addBlacklistedDevice(String deviceID) {
 
-        blacklistedDevices.add(deviceName);
+        if (deviceID == null || deviceID.trim().isEmpty()) {
+            return;
+        }
 
-        System.out.println(
-            deviceName + " added to blacklist."
-        );
+        if (!blacklistedDevices.contains(deviceID)) {
+
+            blacklistedDevices.add(deviceID);
+
+            System.out.println(
+                    deviceID + " added to blacklist."
+            );
+        }
     }
 
+    // Remove a device from the trusted list
+    public void removeTrustedDevice(String deviceID) {
+
+        trustedDevices.remove(deviceID);
+    }
+
+    // Remove a device from the blacklist
+    public void removeBlacklistedDevice(String deviceID) {
+
+        blacklistedDevices.remove(deviceID);
+    }
 
     // Check the security status of a USB device
-    public String checkDevice(String deviceName) {
+    public String checkDevice(String deviceID) {
 
-        // First check whether the device is blacklisted
-        if (blacklistedDevices.contains(deviceName)) {
+        if (deviceID == null || deviceID.trim().isEmpty()) {
+            return "UNKNOWN";
+        }
 
+        // Blacklist has higher priority
+        if (blacklistedDevices.contains(deviceID)) {
             return "BLACKLISTED";
         }
 
-        // Then check whether the device is trusted
-        if (trustedDevices.contains(deviceName)) {
-
+        // Check trusted devices
+        if (trustedDevices.contains(deviceID)) {
             return "TRUSTED";
         }
 
-        // If it is not in either list, it is unknown
+        // Device is not in either list
         return "UNKNOWN";
     }
 
+    // Check whether a device is trusted
+    public boolean isTrusted(String deviceID) {
 
-    // Display the security status of a device
-    public void showSecurityStatus(String deviceName) {
-
-        System.out.println("Device: " + deviceName);
-
-        System.out.println(
-            "Security Status: " + checkDevice(deviceName)
-        );
+        return trustedDevices.contains(deviceID);
     }
 
+    // Check whether a device is blacklisted
+    public boolean isBlacklisted(String deviceID) {
+
+        return blacklistedDevices.contains(deviceID);
+    }
+
+    // Get number of trusted devices
+    public int getTrustedDeviceCount() {
+
+        return trustedDevices.size();
+    }
+
+    // Get number of blacklisted devices
+    public int getBlacklistedDeviceCount() {
+
+        return blacklistedDevices.size();
+    }
+
+    // Display security status
+    public void showSecurityStatus(String deviceID) {
+
+        System.out.println(
+                "Device ID: " + deviceID
+        );
+
+        System.out.println(
+                "Security Status: "
+                        + checkDevice(deviceID)
+        );
+    }
 
     // Display all trusted devices
     public void showTrustedDevices() {
@@ -78,12 +126,20 @@ public class SecurityManager {
         System.out.println();
         System.out.println("Trusted Devices");
 
+        if (trustedDevices.isEmpty()) {
+
+            System.out.println(
+                    "No trusted devices."
+            );
+
+            return;
+        }
+
         for (String device : trustedDevices) {
 
             System.out.println(device);
         }
     }
-
 
     // Display all blacklisted devices
     public void showBlacklistedDevices() {
@@ -91,41 +147,65 @@ public class SecurityManager {
         System.out.println();
         System.out.println("Blacklisted Devices");
 
+        if (blacklistedDevices.isEmpty()) {
+
+            System.out.println(
+                    "No blacklisted devices."
+            );
+
+            return;
+        }
+
         for (String device : blacklistedDevices) {
 
             System.out.println(device);
         }
     }
 
-
-    // Main method for testing the SecurityManager
+    // Main method for testing SecurityManager
     public static void main(String[] args) {
 
-        // Create a SecurityManager object
-        SecurityManager security = new SecurityManager();
+        SecurityManager security =
+                new SecurityManager();
 
+        String trustedUSB =
+                "USB\\TRUSTED_DEVICE_001";
 
-        // Add a trusted USB device
-        security.addTrustedDevice("My USB");
+        String blacklistedUSB =
+                "USB\\BLACKLISTED_DEVICE_001";
 
+        String unknownUSB =
+                "USB\\UNKNOWN_DEVICE_001";
 
-        // Add a blacklisted USB device
-        security.addBlacklistedDevice("Unknown USB");
+        // Add test devices
+        security.addTrustedDevice(
+                trustedUSB
+        );
 
+        security.addBlacklistedDevice(
+                blacklistedUSB
+        );
 
-        // Check the security status of different devices
-        security.showSecurityStatus("My USB");
+        // Check security status
+        System.out.println();
+        System.out.println("Security Test Results");
+        System.out.println("---------------------");
 
-        security.showSecurityStatus("Unknown USB");
+        security.showSecurityStatus(
+                trustedUSB
+        );
 
-        security.showSecurityStatus("New USB");
+        security.showSecurityStatus(
+                blacklistedUSB
+        );
 
+        security.showSecurityStatus(
+                unknownUSB
+        );
 
-        // Display trusted devices
+        // Display device lists
         security.showTrustedDevices();
 
-
-        // Display blacklisted devices
         security.showBlacklistedDevices();
     }
 }
